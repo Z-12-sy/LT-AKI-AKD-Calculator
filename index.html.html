@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LT-AKI to AKD Risk Calculator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f0f2f5;
+            color: #1a1a1a;
+            line-height: 1.5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .header {
+            background: #1e3a5f;
+            color: #fff;
+            padding: 28px 32px;
+            text-align: center;
+        }
+        .header h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 6px; }
+        .header p { font-size: 0.85rem; opacity: 0.85; }
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.15);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            margin-top: 10px;
+            letter-spacing: 0.3px;
+        }
+        .content { padding: 28px 32px; }
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin-bottom: 14px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e8ecf1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 640px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .content { padding: 20px; }
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .input-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 5px;
+        }
+        .input-group .unit {
+            font-weight: 400;
+            color: #7f8c8d;
+            font-size: 0.75rem;
+        }
+        .input-group input,
+        .input-group select {
+            padding: 9px 11px;
+            border: 1.5px solid #dce3eb;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: #fafbfc;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #1e3a5f;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(30,58,95,0.08);
+        }
+        .hint {
+            font-size: 0.72rem;
+            color: #95a5a6;
+            margin-top: 3px;
+        }
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn-calculate {
+            flex: 1;
+            padding: 12px;
+            background: #1e3a5f;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-calculate:hover { background: #152d4a; }
+        .btn-reset {
+            padding: 12px 18px;
+            background: #fff;
+            color: #555;
+            border: 1.5px solid #dce3eb;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-reset:hover { background: #f5f6f7; border-color: #bdc3c7; }
+
+        /* Result panel */
+        .result-panel {
+            margin-top: 24px;
+            padding: 24px;
+            border-radius: 8px;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-panel.low { background: #eafaf1; border: 1px solid #27ae60; }
+        .result-panel.moderate { background: #fef9e7; border: 1px solid #f1c40f; }
+        .result-panel.high { background: #fdedec; border: 1px solid #e74c3c; }
+
+        .risk-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .risk-label {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+        .low .risk-label { color: #27ae60; }
+        .moderate .risk-label { color: #d4ac0d; }
+        .high .risk-label { color: #c0392b; }
+
+        .probability {
+            font-size: 2.6rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .probability span { font-size: 0.9rem; font-weight: 500; color: #555; }
+
+        .recommendation {
+            margin-top: 12px;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.75);
+            border-radius: 5px;
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        /* Feature contribution section */
+        .contrib-section {
+            margin-top: 22px;
+            display: none;
+        }
+        .contrib-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin-bottom: 10px;
+        }
+        .contrib-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 0.78rem;
+        }
+        .contrib-name {
+            width: 130px;
+            text-align: right;
+            padding-right: 10px;
+            color: #444;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .contrib-track {
+            flex: 1;
+            height: 16px;
+            background: #ecf0f1;
+            border-radius: 3px;
+            position: relative;
+            overflow: hidden;
+        }
+        .contrib-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        .contrib-fill.pos { background: #e74c3c; }
+        .contrib-fill.neg { background: #3498db; }
+        .contrib-fill.base { background: #95a5a6; }
+        .contrib-value {
+            width: 55px;
+            padding-left: 8px;
+            font-weight: 600;
+            font-size: 0.72rem;
+            color: #333;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e8ecf1;
+            margin: 18px 0;
+        }
+        .footer-note {
+            font-size: 0.72rem;
+            color: #95a5a6;
+            text-align: center;
+            margin-top: 18px;
+            padding-top: 14px;
+            border-top: 1px solid #e8ecf1;
+        }
+        .formula-box {
+            background: #f8f9fa;
+            border: 1px solid #e8ecf1;
+            border-radius: 5px;
+            padding: 10px 12px;
+            font-size: 0.78rem;
+            color: #555;
+            margin-top: 10px;
+            font-family: "Courier New", monospace;
+            line-height: 1.4;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>LT-AKI to AKD Risk Calculator</h1>
+            <p>Postoperative Early Prediction of Acute Kidney Disease after Liver Transplantation</p>
+            <div class="badge">Logistic Regression Model | Postoperative Day 7</div>
+        </div>
+
+        <div class="content">
+            <div class="section-title">Patient Parameters</div>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Sex</label>
+                    <select id="sex">
+                        <option value="1">Male</option>
+                        <option value="0">Female</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Preoperative SCr <span class="unit">(μmol/L)</span></label>
+                    <input type="number" id="pre_scr" step="0.1" placeholder="e.g., 70">
+                    <div class="hint">Baseline serum creatinine before LT (μmol/L)</div>
+                </div>
+                <div class="input-group">
+                    <label>Postoperative Day 7 BUN <span class="unit">(mmol/L)</span></label>
+                    <input type="number" id="po7_bun" step="0.1" placeholder="e.g., 14">
+                    <div class="hint">Blood urea nitrogen at POD 7</div>
+                </div>
+                <div class="input-group">
+                    <label>Postoperative Day 7 Sodium <span class="unit">(mmol/L)</span></label>
+                    <input type="number" id="po7_natrium" step="0.1" placeholder="e.g., 139">
+                    <div class="hint">Serum sodium at POD 7</div>
+                </div>
+                <div class="input-group">
+                    <label>CNI Overexposure</label>
+                    <select id="cni">
+                        <option value="0">No</option>
+                        <option value="1">Yes</option>
+                    </select>
+                    <div class="hint">Tacrolimus trough &gt;12 or CsA &gt;300 ng/mL</div>
+                </div>
+                <div class="input-group">
+                    <label>Imipenem Use</label>
+                    <select id="imipenem">
+                        <option value="0">No</option>
+                        <option value="1">Yes</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Amphotericin B Use</label>
+                    <select id="ampho">
+                        <option value="0">No</option>
+                        <option value="1">Yes</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Sulperazone Use</label>
+                    <select id="sulperazon">
+                        <option value="0">No</option>
+                        <option value="1">Yes</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn-calculate" onclick="calculateRisk()">Calculate AKD Risk</button>
+                <button class="btn-reset" onclick="resetForm()">Reset</button>
+            </div>
+
+            <div id="resultPanel" class="result-panel">
+                <div class="risk-header">
+                    <div class="risk-label" id="riskLabel"></div>
+                    <div class="probability" id="probability"></div>
+                </div>
+                <div class="recommendation" id="recommendation"></div>
+            </div>
+
+            <div id="contribSection" class="contrib-section">
+                <div class="divider"></div>
+                <div class="contrib-title">Feature Contribution to Logit Score</div>
+                <div id="contribBars"></div>
+                <div class="formula-box" id="formulaBox"></div>
+            </div>
+
+            <div class="footer-note">
+                <strong>Disclaimer:</strong> This calculator is for research and educational purposes only. 
+                Clinical decisions should not rely solely on this tool. The underlying model was developed and 
+                validated in a single-center cohort; external validation is required before broader clinical deployment.
+            </div>
+        </div>
+    </div>
+
+<script>
+// ===== Real Model Parameters (from final LR equation) =====
+const intercept = -11.0311;
+const coef = {
+    sex: -0.3889,
+    pre_scr: -0.0265,
+    cni: 0.6815,
+    imipenem: 0.4383,
+    ampho: 0.6718,
+    sulperazon: 0.1254,
+    po7_bun: 0.1701,
+    po7_natrium: 0.0775
+};
+
+const labels = {
+    sex: "Sex (Male)",
+    pre_scr: "pre_SCr",
+    cni: "CNI Overexp.",
+    imipenem: "Imipenem",
+    ampho: "Ampho B",
+    sulperazon: "Sulperazon",
+    po7_bun: "po7_BUN",
+    po7_natrium: "po7_Na"
+};
+
+function calculateRisk() {
+    // Read inputs
+    const x = {
+        sex: parseInt(document.getElementById('sex').value),
+        pre_scr: parseFloat(document.getElementById('pre_scr').value),
+        po7_bun: parseFloat(document.getElementById('po7_bun').value),
+        po7_natrium: parseFloat(document.getElementById('po7_natrium').value),
+        cni: parseInt(document.getElementById('cni').value),
+        imipenem: parseInt(document.getElementById('imipenem').value),
+        ampho: parseInt(document.getElementById('ampho').value),
+        sulperazon: parseInt(document.getElementById('sulperazon').value)
+    };
+
+    // Validate
+    for (let key in x) {
+        if (isNaN(x[key])) {
+            alert('Please fill in all fields before calculating.');
+            return;
+        }
+    }
+
+    // Compute linear predictor (logit)
+    let z = intercept;
+    let contributions = {};
+    for (let key in coef) {
+        const c = coef[key] * x[key];
+        z += c;
+        contributions[key] = c;
+    }
+
+    // Sigmoid
+    const prob = 1 / (1 + Math.exp(-z));
+    const pct = (prob * 100).toFixed(1);
+
+    // Risk stratification
+    let riskClass, riskLabel, recommendation;
+    if (prob < 0.30) {
+        riskClass = 'low';
+        riskLabel = 'LOW RISK';
+        recommendation = '<strong>Standard postoperative care.</strong> Continue routine monitoring of renal function. Maintain standard CNI trough levels. Reassess if clinical condition changes.';
+    } else if (prob < 0.60) {
+        riskClass = 'moderate';
+        riskLabel = 'MODERATE RISK';
+        recommendation = '<strong>Enhanced monitoring recommended.</strong> Consider daily SCr/BUN checks. Review CNI dosing (target lower trough if feasible). Avoid additional nephrotoxic agents. Ensure adequate hydration.';
+    } else {
+        riskClass = 'high';
+        riskLabel = 'HIGH RISK';
+        recommendation = '<strong>Intensified nephroprotection advised.</strong> Consider CNI minimization/switching. Strict avoidance of nephrotoxic drugs. Hemodynamic optimization. Early nephrology consultation.';
+    }
+
+    // Display result
+    const panel = document.getElementById('resultPanel');
+    panel.className = 'result-panel ' + riskClass;
+    panel.style.display = 'block';
+    document.getElementById('riskLabel').textContent = riskLabel;
+    document.getElementById('probability').innerHTML = pct + '<span>% probability of AKD</span>';
+    document.getElementById('recommendation').innerHTML = recommendation;
+
+    // Render contribution bars
+    renderContributions(contributions, z);
+    document.getElementById('contribSection').style.display = 'block';
+
+    // Scroll
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function renderContributions(contributions, totalZ) {
+    const names = labels;
+    const sorted = Object.keys(contributions).sort((a,b) => 
+        Math.abs(contributions[b]) - Math.abs(contributions[a])
+    );
+
+    let html = '';
+    const maxAbs = Math.max(...Object.values(contributions).map(Math.abs), Math.abs(intercept));
+
+    // Intercept bar
+    html += makeBar("Intercept", intercept, maxAbs, true);
+
+    // Feature bars
+    sorted.forEach(key => {
+        html += makeBar(names[key], contributions[key], maxAbs, false);
+    });
+
+    document.getElementById('contribBars').innerHTML = html;
+
+    // Formula text
+    let formula = `logit(p) = ${intercept.toFixed(4)}`;
+    sorted.forEach(key => {
+        const sign = contributions[key] >= 0 ? ' + ' : ' - ';
+        formula += `${sign}${Math.abs(coef[key]).toFixed(4)}×${key}`;
+    });
+    formula += ` = ${totalZ.toFixed(4)}`;
+    document.getElementById('formulaBox').textContent = formula;
+}
+
+function makeBar(name, value, maxAbs, isIntercept) {
+    const width = (Math.abs(value) / maxAbs) * 100;
+    let cls = '';
+    if (isIntercept) cls = 'base';
+    else if (value > 0) cls = 'pos';
+    else cls = 'neg';
+    const sign = value >= 0 ? '+' : '-';
+    return `
+        <div class="contrib-bar">
+            <div class="contrib-name">${name}</div>
+            <div class="contrib-track">
+                <div class="contrib-fill ${cls}" style="width: ${width}%"></div>
+            </div>
+            <div class="contrib-value">${sign}${Math.abs(value).toFixed(3)}</div>
+        </div>
+    `;
+}
+
+function resetForm() {
+    document.querySelectorAll('input[type="number"]').forEach(i => i.value = '');
+    document.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+    document.getElementById('resultPanel').style.display = 'none';
+    document.getElementById('contribSection').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
